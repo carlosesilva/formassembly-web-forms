@@ -82,34 +82,15 @@ function fa_add($atts) {
                         }
                         // REST API method
                         else {
-                                // Use cURL if available
-                                if(extension_loaded('curl') ){
-
-                                        $ch = curl_init();
-                                        curl_setopt($ch, CURLOPT_HEADER, 0);
-                                        curl_setopt($ch, CURLOPT_AUTOREFERER, 1);
-                                        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-                                        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-                                        if(!isset($_GET['tfa_next'])) {
-                                                curl_setopt($ch, CURLOPT_URL,$host_url.'/rest/'.$action_url.'/'.$fa_id.$qs);
-                                        } else {
-                                                curl_setopt($ch, CURLOPT_URL,$host_url.'/rest'.$_GET['tfa_next']);
-                                        };
-                                        $buffer = curl_exec($ch);
+                                // Use wp_remote_get.
+                                if ( ! isset( $_GET[ 'tfa_next' ] ) ) {
+                                        $url = $host_url . '/rest/' . $action_url . '/' . $fa_id . $qs;
+                                } else {
+                                        $url = $host_url . '/rest' . $_GET[ 'tfa_next' ];
                                 }
-                                // Use file_get_contents (fopen) otherwise (Note: referrer not set)
-                                elseif(ini_get("allow_url_fopen")=="1" && function_exists("file_get_contents")) {
-
-                                        if(!isset($_GET['tfa_next'])) {
-                                                $buffer = file_get_contents($host_url.'/rest/'.$action_url.'/'.$fa_id.$qs);
-                                        } else {
-                                                $buffer = file_get_contents($host_url.'/rest'.$_GET['tfa_next']);
-                                        }
-                                }
-                                // REST API call not supported, must use iframe instead.
-                                else {
-                                        $buffer = "<strong style=\"color:red\">Your server does not support this form publishing method. Try adding iframe=\"1\" to your FormAssembly tag.</strong>";
+                                $result = wp_remote_get( $url );
+                                if ( ! is_wp_error( $result ) && isset( $result['body'] ) ) {
+                                        $buffer = $result['body'];
                                 }
 
                                 // Add style options in to combat wordpresses' default centering of forms.
